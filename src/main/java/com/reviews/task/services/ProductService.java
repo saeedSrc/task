@@ -1,5 +1,6 @@
 package com.reviews.task.services;
 
+import com.reviews.task.constants.ErrorMessages;
 import com.reviews.task.data.domain.Product;
 import com.reviews.task.data.dtos.ProductDTO;
 import com.reviews.task.repositories.ProductRepository;
@@ -40,7 +41,7 @@ public class ProductService {
     @Transactional
     public void setProductDisplayable(Long productId, boolean displayable) {
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new EntityNotFoundException("Product not found with ID: " + productId));
+                .orElseThrow(() -> new EntityNotFoundException(ErrorMessages.PRODUCT_NOT_FOUND));
         product.setDisplayable(displayable);
         productRepository.save(product);
     }

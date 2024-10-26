@@ -1,5 +1,7 @@
 package com.reviews.task.services;
 
+import com.reviews.task.constants.ErrorMessages;
+import com.reviews.task.constants.RedisKeys;
 import com.reviews.task.data.domain.Product;
 import com.reviews.task.data.domain.User;
 import com.reviews.task.data.dtos.ProductReviewSummaryDTO;
@@ -12,14 +14,10 @@ import org.springframework.data.domain.Pageable;
 import com.reviews.task.data.domain.Review;
 import com.reviews.task.data.enums.ReviewAble;
 import jakarta.persistence.EntityNotFoundException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
-
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 
 @Service
@@ -57,20 +55,20 @@ public class ReviewService {
         } else if (product.getReviewAble() == ReviewAble.ALL) {
             return true;
         } else {
-            return Boolean.TRUE.equals(redisService.isMember("purchased_products:" + userId, product.getId().toString()));
+            return Boolean.TRUE.equals(redisService.isMember(RedisKeys.PURCHASED_PRODUCTS + userId, product.getId().toString()));
         }
     }
 
     public boolean canUserReviewProduct(Long userId, Long productId) {
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new EntityNotFoundException("Product not found"));
+                .orElseThrow(() -> new EntityNotFoundException(ErrorMessages.PRODUCT_NOT_FOUND));
         // اینجا جایی هست که من بر حسب مقدار reviewAble تصمیم میگیرم که ایا به کاربر اجازه review بدم یا خیر
         if (product.getReviewAble() == ReviewAble.NO_BODY) {
             return false;
         } else if (product.getReviewAble() == ReviewAble.ALL) {
             return true;
         } else {
-            return Boolean.TRUE.equals(redisService.isMember("purchased_products:" + userId, product.getId().toString()));
+            return Boolean.TRUE.equals(redisService.isMember(RedisKeys.PURCHASED_PRODUCTS + userId, product.getId().toString()));
         }
     }
 
@@ -82,17 +80,17 @@ public class ReviewService {
 
     public ReviewDTO addReview(Long userId, Long productId, String comment, int vote) {
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new EntityNotFoundException("Product not found"));
+                .orElseThrow(() -> new EntityNotFoundException(ErrorMessages.PRODUCT_NOT_FOUND));
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+                .orElseThrow(() -> new EntityNotFoundException(ErrorMessages.USER_NOT_FOUND));
 
         if (!canUserReviewProduct(userId, product)) {
-            throw new ReviewPermissionException("User cannot review this product");
+            throw new ReviewPermissionException(ErrorMessages.REVIEW_PERMISSION);
         }
 
         if (hasBeenReviewed(userId, productId)) {
-            throw new ReviewPermissionException("User has already reviewed this product");
+            throw new ReviewPermissionException(ErrorMessages.REVIEW_ADDED_BEFORE);
         }
 
         Review review = new Review();
@@ -107,7 +105,7 @@ public class ReviewService {
 
     public void approveReview(Long reviewId, boolean approved) {
         Review review = reviewRepository.findById(reviewId)
-                .orElseThrow(() -> new EntityNotFoundException("Review not found"));
+                .orElseThrow(() -> new EntityNotFoundException(ErrorMessages.REVIEW_NOT_FOUND));
 
         review.setApproved(approved);
         if(approved) { // adjust product average rating and total rating count
@@ -127,7 +125,7 @@ public class ReviewService {
 
     public void updateProductReviewSettings(Long productId, ReviewAble reviewAble, boolean commentsEnabled, boolean votesEnabled) {
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new EntityNotFoundException("Product not found"));
+                .orElseThrow(() -> new EntityNotFoundException(ErrorMessages.PRODUCT_NOT_FOUND));
 
         product.setReviewAble(reviewAble);
         product.setCommentsEnabled(commentsEnabled);
@@ -143,7 +141,7 @@ public class ReviewService {
             return new ProductReviewSummaryDTO(lastThreeReviews);
         }
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new EntityNotFoundException("Product not found"));
+                .orElseThrow(() -> new EntityNotFoundException(ErrorMessages.PRODUCT_NOT_FOUND));
         return new ProductReviewSummaryDTO(product);
     }
 }
