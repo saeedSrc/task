@@ -33,4 +33,11 @@ public class ProductReviewSummaryDTO {
             this.lastThreeReviews.add(reviewSummary);
         }
     }
+
+    public ProductReviewSummaryDTO(Product product) {
+        this.productId = product.getId();
+        this.productName = product.getName(); // Example field
+        this.averageRating = product.getAverageRating();
+        this.totalReviews = product.getTotalReviews();
+    }
 }

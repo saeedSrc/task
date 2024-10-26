@@ -142,8 +142,9 @@ public class ReviewService {
         if(lastThreeReviews.size()> 0) {
             return new ProductReviewSummaryDTO(lastThreeReviews);
         }
-
-        return null;
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new EntityNotFoundException("Product not found"));
+        return new ProductReviewSummaryDTO(product);
     }
 }
 
